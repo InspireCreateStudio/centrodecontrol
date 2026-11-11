@@ -14,6 +14,7 @@ function datosVacios() {
     app: 'centro', version: 1,
     libros: [], kdp: { ventas: [], kenp: [] }, ingresos: [], ventas: [], gastos: [], impuestos: [],
     informe: {},
+    perfil: { nombre: '', usuario: '', genero: '', foto: '', enlaces: { instagram: '', tiktok: '', amazon: '', web: '' }, otros: [] },
     listas: listasPorDefecto(),
     ajustes: {
       objetivo: 30000, saldoInicial: 0, kenpTasa: 0.0042, kenpTasas: {},
@@ -44,6 +45,10 @@ function completar(d) {
   const b = datosVacios();
   Object.keys(b).forEach(k => { if (d[k] === undefined) d[k] = b[k]; });
   ['ventas', 'kenp'].forEach(k => { if (!d.kdp[k]) d.kdp[k] = []; });
+  if (!d.perfil || typeof d.perfil !== 'object') d.perfil = b.perfil;
+  if (!d.perfil.enlaces || typeof d.perfil.enlaces !== 'object') d.perfil.enlaces = {};
+  ['instagram', 'tiktok', 'amazon', 'web'].forEach(k => { if (d.perfil.enlaces[k] == null) d.perfil.enlaces[k] = ''; });
+  if (!Array.isArray(d.perfil.otros)) d.perfil.otros = [];
   Object.keys(b.ajustes).forEach(k => { if (d.ajustes[k] === undefined) d.ajustes[k] = b.ajustes[k]; });
   Object.keys(b.listas).forEach(k => { if (!d.listas[k] || !d.listas[k].length) d.listas[k] = b.listas[k]; });
   // Series y universos salen de los propios libros
@@ -240,7 +245,7 @@ function importarDatos(j, modo) {
   if (modo === 'sustituir') {
     const aj = D ? D.ajustes : datosVacios().ajustes;
     D = completar({ ...datosVacios(), ...nuevo, kdp: nuevo.kdp || { ventas: [], kenp: [] }, listas: { ...listasPorDefecto(), ...(nuevo.listas || {}) },
-      ajustes: { ...aj, ...(nuevo.ajustes || {}), tema: aj.tema, colores: aj.colores } });
+      ajustes: { ...aj, ...(nuevo.ajustes || {}), tema: aj.tema, colores: aj.colores }, perfil: nuevo.perfil || (D && D.perfil) || undefined });
   } else {
     ['libros', 'ingresos', 'ventas', 'gastos', 'impuestos'].forEach(k => { const ids = new Set(D[k].map(o => o.id)); (nuevo[k] || []).forEach(o => { if (!ids.has(o.id)) D[k].push(o); }); });
     ['ventas', 'kenp'].forEach(k => { const ids = new Set(D.kdp[k].map(o => o.id)); ((nuevo.kdp || {})[k] || []).forEach(o => { if (!ids.has(o.id)) D.kdp[k].push(o); }); });

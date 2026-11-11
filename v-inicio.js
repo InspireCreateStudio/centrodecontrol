@@ -39,6 +39,7 @@ VISTAS.inicio = (cont) => {
   if (pl) { const d = diasEntre(H, pl.desde), dh = diasEntre(H, pl.hasta); avisos.push({ c: d <= 0 ? 'rojo' : d <= 15 ? 'ambar' : '', t: `🗓️ IVA e IRPF del ${pl.t}.º trimestre ${pl.y}: ${d <= 0 ? `<b>plazo abierto, acaba en ${plural(dh, 'día', 'días')}</b>` : `se presenta del ${fechaCorta(pl.desde)} al ${fechaCorta(pl.hasta)} (en ${plural(d, 'día', 'días')})`}`, ir: 'impuestos', ui: { fAnio: pl.y, fTrim: pl.t } }); }
 
   cont.innerHTML = `<div class="pagina ancha inicio">
+    ${tarjetaPerfil()}
     ${cabecera('Centro de Control', `Tu negocio, tus libros. ${esteAnio ? 'Datos de ' + Y + ' hasta hoy.' : 'Año ' + Y + '.'}`, selectorAnio())}
     <div class="cifras-grandes">
       ${cifra('Ingresos', fmtE0(R.ingresos), `${fmtE0(R.kdp + R.kenp)} de Amazon`)}
@@ -83,6 +84,7 @@ VISTAS.inicio = (cont) => {
 
   enlazarAnio(cont); enlazarGraficos(cont);
   $$('[data-av]', cont).forEach(b => b.onclick = () => { const a = avisos[+b.dataset.av]; irA(a.ir, { ui: a.ui }); });
+  if ($('#in-perfil', cont)) $('#in-perfil', cont).onclick = () => irA('ajustes');
   $$('[data-ir]', cont).forEach(b => b.onclick = (e) => { e.preventDefault(); if (b.dataset.ir === 'caja') irA('informe', { ui: { infPest: 'caja' } }); else irA(b.dataset.ir); });
   $$('[data-libro]', cont).forEach(li => li.onclick = () => irA('libros', { ui: { libro: li.dataset.libro } }));
 };

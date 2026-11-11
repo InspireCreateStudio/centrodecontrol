@@ -197,3 +197,15 @@
 .informe .porque h3 { margin: 0 0 6px; font-size: 15px; }
 .informe .porque ul { margin: 0 0 10px; padding-left: 18px; line-height: 1.5; }
 .informe .tabla td.num small { font-weight: 600; }
+
+/* Perfil de autora (Inicio y Ajustes) */
+.saludo-in { margin: 0 0 6px; color: var(--suave); }
+.perfil-in { display: flex; align-items: center; gap: 20px; margin-bottom: 18px; }
+.avatar-in { width: 72px; height: 72px; border-radius: 50%; background: var(--acento-claro); color: var(--acento); display: grid; place-items: center; font: italic 600 30px var(--serif); overflow: hidden; flex: none; }
+.avatar-in img { width: 100%; height: 100%; object-fit: cover; }
+.perfil-in .perfil-txt { flex: 1; min-width: 0; }
+.perfil-in .perfil-nom { font-family: var(--serif); font-size: 28px; font-weight: 600; line-height: 1.15; }
+.perfil-links { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; }
+.perfil-links a { color: var(--tinta); text-decoration: none; border-bottom: 2px solid var(--acento-claro); font-weight: 600; }
+.perfil-links a:hover { border-color: var(--acento); }
+@media (max-width: 700px) { .perfil-in { flex-wrap: wrap; gap: 12px; } .perfil-in .perfil-nom { font-size: 22px; } }

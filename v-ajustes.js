@@ -17,6 +17,7 @@ VISTAS.ajustes = (cont) => {
   const ac = coloresDe().acento || COLOR_ACENTO;
   cont.innerHTML = `<div class="pagina ajustes">${cabecera('⚙️ Ajustes', '')}
     <div class="rejilla r2">
+      ${seccionPerfil()}
       <section class="tarjeta"><h2>Tus datos (para la gestoría)</h2>${txt('nombreFiscal', 'Nombre')}${txt('nif', 'NIF')}${txt('actividad', 'Actividad')}</section>
       <section class="tarjeta"><h2>Objetivo y caja</h2><div class="form">${num('objetivo', 'Objetivo de ingresos al año (€)', '', '100')}${num('saldoInicial', 'Saldo inicial de la cuenta (€)', 'Para que la caja empiece en lo que tenías.')}</div></section>
       <section class="tarjeta"><h2>Cómo se calcula</h2><div class="form">
@@ -67,6 +68,7 @@ VISTAS.ajustes = (cont) => {
     if (!(await preguntar('¿Borrar todo?', 'Se borran todos tus libros, ventas, gastos… de este aparato. Antes te descargo una copia.', 'Borrar todo', true))) return;
     await hacerCopia('antes de borrar'); const aj = D.ajustes; D = datosVacios(); D.ajustes = aj; cambio(); aviso('Todo borrado. Tienes la copia en Descargas.');
   };
+  enlazarPerfil(cont);
   if (typeof enlazarGoogle === 'function') enlazarGoogle(cont);
 };
 
