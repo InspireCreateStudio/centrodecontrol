@@ -190,3 +190,10 @@
   body.imprimir-gestoria .app { height: auto; }
   body.imprimir-gestoria .vista, body.imprimir-gestoria main { overflow: visible !important; height: auto !important; }
 }
+
+/* Informe › Últimos cinco años */
+.informe .porque { border-top: 1px solid var(--linea); padding: 12px 0 4px; }
+.informe .porque:first-of-type { border-top: 0; }
+.informe .porque h3 { margin: 0 0 6px; font-size: 15px; }
+.informe .porque ul { margin: 0 0 10px; padding-left: 18px; line-height: 1.5; }
+.informe .tabla td.num small { font-weight: 600; }

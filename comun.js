@@ -57,10 +57,13 @@ function borrarConDeshacer(lista, id, texto) {
 }
 
 function elegirArchivo(fn) {
-  const i = el('input', { type: 'file', accept: '.json,application/json' });
+  const i = el('input', { type: 'file', accept: '.json,application/json,.xlsx,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   i.onchange = async () => {
     const f = i.files[0]; if (!f) return;
-    try { fn(JSON.parse(await f.text())); } catch (e) { aviso('No he podido leer ese archivo'); }
+    if (/\.xls[xm]$/i.test(f.name)) aviso('Leyendo el Excel… puede tardar unos segundos');
+    let j;
+    try { j = await leerArchivoCentro(f); } catch (e) { console.error(e); return aviso(e && e.message && /Excel|xlsx/.test(e.message) ? e.message : 'No he podido leer ese archivo'); }
+    fn(j);
   };
   i.click();
 }
