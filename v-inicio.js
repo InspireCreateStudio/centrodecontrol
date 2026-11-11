@@ -24,6 +24,14 @@ VISTAS.inicio = (cont) => {
   if (!ultKdp || ultKdp < sumarMeses(mesDe(H), -1)) avisos.push({ c: 'ambar', t: `📈 Falta el informe de KDP de <b>${nombreMes(ultKdp ? sumarMeses(ultKdp, 1) : mesPasado)}</b>. Amazon lo publica hacia el día 15 del mes siguiente.`, ir: 'kdp' });
   const sinLibro = [...D.kdp.ventas, ...D.kdp.kenp].filter(f => !libroDeFila(f)).length;
   if (sinLibro) avisos.push({ c: 'ambar', t: `📚 ${plural(sinLibro, 'fila de KDP no sabe', 'filas de KDP no saben')} de qué libro es.`, ir: 'kdp', ui: { kPest: 'sinlibro' } });
+  // Libros que llevan tres meses seguidos bajando en Amazon (regalías + KENP)
+  if (ultKdp) {
+    const ms = [sumarMeses(ultKdp, -3), sumarMeses(ultKdp, -2), sumarMeses(ultKdp, -1), ultKdp];
+    [...porLibro().values()].filter(x => x.libro).map(x => ({ x, v: ms.map(m => x.meses[m] || 0) }))
+      .filter(({ v }) => v[0] >= 5 && v[1] < v[0] && v[2] < v[1] && v[3] < v[2] && v[3] <= v[0] * .85)
+      .sort((a, b) => (b.v[0] - b.v[3]) - (a.v[0] - a.v[3])).slice(0, 3)
+      .forEach(({ x, v }) => avisos.push({ c: 'ambar', t: `📉 <b>${esc(tituloLibro(x.libro))}</b> lleva tres meses bajando en Amazon: ${v.map(e => fmtE0(e)).join(' → ')} (${nombreMes(ms[0])} a ${nombreMes(ms[3])}). ¿Promoción, anuncios o revisar portada y descripción?`, ir: 'kdp' }));
+  }
   const vdSinFecha = D.ventas.filter(v => !v.fecha && v.estado !== 'Cancelado').length;
   if (vdSinFecha) avisos.push({ c: 'ambar', t: `📦 ${plural(vdSinFecha, 'pedido de venta directa no tiene', 'pedidos de venta directa no tienen')} fecha: no cuentan en ningún mes ni en los impuestos.`, ir: 'ingresos', ui: { iPest: 'directa' } });
   const noDed = D.gastos.filter(g => anioDe(g.fecha) === Y && !g.deducible && n(g.base)).length;
