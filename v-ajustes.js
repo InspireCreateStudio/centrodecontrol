@@ -37,8 +37,9 @@ VISTAS.ajustes = (cont) => {
       ${typeof tarjetaGoogle === 'function' ? tarjetaGoogle() : ''}
       <section class="tarjeta"><h2>Copias de seguridad</h2>
         <p class="suave" style="margin-top:0">Tus datos viven en este navegador. Guarda una copia de vez en cuando (y conecta Google para tenerlos también en el móvil).</p>
-        <div class="fila-btns"><button class="btn prim" id="aj-copia">Descargar copia ahora</button><button class="btn" id="aj-rest">Restaurar una copia…</button></div>
-        <label class="campo"><span>Copia automática a Descargas</span><select id="aj-auto">${[[0, 'Nunca'], [1, 'Cada día'], [7, 'Cada semana'], [30, 'Cada mes']].map(([v, t]) => `<option value="${v}"${(A.copiaDias ?? 7) === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+        <div class="fila-btns"><button class="btn prim" id="aj-copia">Hacer copia ahora</button><button class="btn" id="aj-rest">Restaurar una copia…</button></div>
+        <label class="campo"><span>Copia automática</span><select id="aj-auto">${[[0, 'Nunca'], [1, 'Cada día'], [3, 'Cada 3 días'], [7, 'Cada semana'], [15, 'Cada 15 días'], [30, 'Cada mes']].map(([v, t]) => `<option value="${v}"${(A.copiaDias ?? 7) === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+        <p class="suave" style="font-size:13px">${GG.e && GG.e.conectado ? `Con Google Drive conectado, las copias van a tu Drive, a la carpeta «${CopiaDrive.CARPETA}». Me quedo con las dos últimas y borro las anteriores.${CopiaDrive.faltaPermiso('Centro de Control · Copia') ? ' <b class="rojo">Falta tu permiso: desconecta y vuelve a conectar Google Drive.</b>' : ''}` : 'Sin Google Drive conectado, las copias van a tu carpeta de Descargas.'}</p>
         <p class="tenue">${A.ultimaCopia ? 'Última copia: ' + new Date(A.ultimaCopia).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' }) : 'Aún no has hecho ninguna copia.'}</p></section>
       <section class="tarjeta"><h2>Traer datos del Excel</h2><p class="suave" style="margin-top:0">Elige tu Excel del Centro de Control (<b>.xlsx</b>) tal cual, o un archivo <b>centro-importar.json</b>. Con «Juntar», importar otra vez el mismo Excel no duplica nada.</p><button class="btn" id="aj-imp">Importar Excel o archivo…</button></section>
     </div>
@@ -94,7 +95,15 @@ async function hacerCopia(motivo) {
   const d = new Date();
   const nombre = `Centro de Control · Copia ${aStr(d)} ${pad(d.getHours())}h${pad(d.getMinutes())}${motivo ? ' (' + motivo + ')' : ''}.json`;
   await guardarYa();
-  descargar(new Blob([JSON.stringify({ app: 'centro', tipo: 'copia', version: 1, fecha: d.toISOString(), datos: D })], { type: 'application/json' }), nombre);
+  const blob = new Blob([JSON.stringify({ app: 'centro', tipo: 'copia', version: 1, fecha: d.toISOString(), datos: D })], { type: 'application/json' });
+  // Las copias de seguridad (a mano o automáticas) van a Google Drive si está conectado; las de «antes de…», a Descargas
+  if (!motivo || motivo === 'automática') {
+    const dest = await CopiaDrive.guardar({ prefijo: 'Centro de Control · Copia', nombre, blob, auto: motivo === 'automática', app: {
+      conectado: () => !!(GG.e && GG.e.conectado), token: () => pedirToken(false),
+      olvidarToken: () => { GG.token = null; localStorage.removeItem('centro:token'); },
+      descargar, aviso,
+    } });
+    if (dest === 'descargas' && !(GG.e && GG.e.conectado)) aviso(motivo ? 'He guardado tu copia de seguridad en Descargas' : 'Copia guardada en Descargas');
+  } else descargar(blob, nombre);
   D.ajustes.ultimaCopia = Date.now(); guardarPronto();
-  if (!motivo) aviso('Copia guardada en Descargas');
 }

@@ -70,7 +70,7 @@ const VERSION_APP = '1.5';
   // Copia automática
   const dias = D.ajustes.copiaDias ?? 7;
   if (!primeraVez && dias > 0 && (D.libros.length || D.gastos.length) && Date.now() - (D.ajustes.ultimaCopia || 0) > dias * 86400000) {
-    setTimeout(() => { hacerCopia('automática'); aviso('He guardado tu copia de seguridad en Descargas'); }, 5000);
+    setTimeout(() => hacerCopia('automática'), 5000);
   }
 
   if (typeof arrancarGoogle === 'function') arrancarGoogle();

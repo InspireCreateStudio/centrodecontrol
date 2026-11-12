@@ -8,7 +8,7 @@
 // =====================================================================
 
 const GOOGLE_CLIENT_ID = '171808282615-3onraig9fvo9gg2fea3mdsouon7h6pv9.apps.googleusercontent.com'; // se puede dejar fijo aquí; si no, se pega en Ajustes
-const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+const SCOPES = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file';
 const ARCHIVO = 'centro.json';
 
 const GG = {
