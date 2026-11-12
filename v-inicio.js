@@ -46,7 +46,7 @@ VISTAS.inicio = (cont) => {
   for (const [y, t] of [T === 1 ? [Yt - 1, 4] : [Yt, T - 1], [Yt, T]]) { const p = plazoTrimestre(y, t); if (p.hasta >= H) { pl = { y, t, ...p }; break; } }
   if (pl) { const d = diasEntre(H, pl.desde), dh = diasEntre(H, pl.hasta); avisos.push({ c: d <= 0 ? 'rojo' : d <= 15 ? 'ambar' : '', t: `🗓️ IVA e IRPF del ${pl.t}.º trimestre ${pl.y}: ${d <= 0 ? `<b>plazo abierto, acaba en ${plural(dh, 'día', 'días')}</b>` : `se presenta del ${fechaCorta(pl.desde)} al ${fechaCorta(pl.hasta)} (en ${plural(d, 'día', 'días')})`}`, ir: 'impuestos', ui: { fAnio: pl.y, fTrim: pl.t } }); }
 
-  cont.innerHTML = `<div class="pagina ancha inicio">
+  cont.innerHTML = `<div class="pagina ancha inicio"><div class="apps-barra"></div>
     ${tarjetaPerfil()}
     ${cabecera('Centro de Control', `Tu negocio, tus libros. ${esteAnio ? 'Datos de ' + Y + ' hasta hoy.' : 'Año ' + Y + '.'}`, selectorAnio())}
     <div class="cifras-grandes">
