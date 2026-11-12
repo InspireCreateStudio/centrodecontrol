@@ -9,7 +9,7 @@ VISTAS.ingresos = (cont) => {
   cont.innerHTML = `<div class="pagina ancha ingresos">${cabecera('💰 Ingresos', 'Lo que no viene de Amazon: tus facturas y los libros que vendes tú.', `${selectorAnio()}<button class="btn prim" id="in-nuevo">+ ${p === 'directa' ? 'Pedido' : 'Ingreso'}</button>`)}
     ${pestanas([['extra', '🧾 Facturas e ingresos extra'], ['directa', '📦 Venta directa']], p, 'iPest')}<div id="in-cuerpo"></div></div>`;
   enlazarPestanas(cont); enlazarAnio(cont);
-  $('#in-nuevo', cont).onclick = () => p === 'directa' ? editarVenta({ fecha: hoy(), uds: 1, estado: 'Pendiente', formato: 'Papel' }, { nueva: true }) : editarIngreso({ fecha: hoy(), estado: 'Pendiente', irpfPct: D.ajustes.irpfIngresos, ivaPct: 0 }, { nueva: true });
+  $('#in-nuevo', cont).onclick = () => p === 'directa' ? editarVenta({ fecha: hoy(), uds: 1, estado: 'Pendiente', formato: 'Papel' }, { nueva: true }) : editarIngreso({ fecha: hoy(), estado: 'Pendiente', irpfPct: D.ajustes.irpfIngresos, ivaPct: 0, plazoCobro: 'Al momento' }, { nueva: true });
   if (p === 'directa') ventasDirectas($('#in-cuerpo', cont)); else ingresosExtra($('#in-cuerpo', cont));
 };
 
@@ -29,15 +29,16 @@ function ingresosExtra(c) {
       { t: 'IRPF', cl: 'num', v: i => fmtE(ingreso.irpf(i)), pie: fmtE(s(ingreso.irpf)) },
       { t: 'IVA', cl: 'num', v: i => fmtE(ingreso.iva(i)), pie: fmtE(s(ingreso.iva)) },
       { t: 'Neto', cl: 'num', v: i => fmtE(ingreso.neto(i)), pie: fmtE(s(ingreso.neto)) },
+      { t: 'Se cobra', v: i => !i.fecha ? '' : i.estado === 'Cobrado' ? `<span class="tenue">${fechaCorta(i.fechaCobrado || ingreso.fechaCobro(i))}</span>` : `${ingreso.vencido(i) ? '<b class="rojo">' : '<span>'}${fechaCorta(ingreso.fechaCobro(i))}${ingreso.vencido(i) ? ` · vencido</b>` : '</span>'}<small class="bloque">${esc(i.plazoCobro || 'Al momento')}</small>` },
       { t: 'Estado', v: i => `<button class="estado-btn ${i.estado === 'Cobrado' ? 'ok' : 'pend'}" data-cobrar="${i.id}">${esc(i.estado || 'Pendiente')}</button>` },
     ], filas, { id: 'in-tabla', clickable: true, pie: true, vacio: `No hay ingresos extra en ${Y}.` })}`;
   enlazarTabla(c, 'in-tabla', filas, (i) => editarIngreso(i));
-  $$('[data-cobrar]', c).forEach(b => b.onclick = () => { const i = D.ingresos.find(x => x.id === b.dataset.cobrar); i.estado = i.estado === 'Cobrado' ? 'Pendiente' : 'Cobrado'; cambio(); });
+  $$('[data-cobrar]', c).forEach(b => b.onclick = () => { const i = D.ingresos.find(x => x.id === b.dataset.cobrar); i.estado = i.estado === 'Cobrado' ? 'Pendiente' : 'Cobrado'; if (i.estado === 'Cobrado') i.fechaCobrado = hoy(); else delete i.fechaCobrado; cambio(); });
 }
 function editarIngreso(i, { nueva = false } = {}) {
   const L = D.listas;
   const campos = [
-    { k: 'concepto', t: 'Concepto', tipo: 'lista', op: [...new Set(D.ingresos.map(x => x.concepto).filter(Boolean))] },
+    { k: 'concepto', t: 'Concepto', tipo: 'lista', op: [...new Set(D.ingresos.map(x => x.concepto).filter(Boolean))], alCambiar: nueva ? (val, m) => { const ant = [...D.ingresos].reverse().find(x => x.concepto === val); const s = $('[data-k="plazoCobro"]', m); if (ant && ant.plazoCobro && s) s.value = ant.plazoCobro; } : null },
     { k: 'fecha', t: 'Fecha de la factura', tipo: 'fecha', ancho: 'medio' },
     { k: 'factura', t: 'Factura nº', tipo: 'texto', ancho: 'medio', ph: siguienteFactura() },
     { k: 'cliente', t: 'Cliente / entidad', tipo: 'lista', op: [...new Set(D.ingresos.map(x => x.cliente).filter(Boolean))], ancho: 'medio' },
@@ -46,6 +47,7 @@ function editarIngreso(i, { nueva = false } = {}) {
     { k: 'irpfPct', t: 'Retención IRPF %', tipo: 'num', ancho: 'tercio' },
     { k: 'ivaPct', t: 'IVA %', tipo: 'num', ancho: 'tercio', ayuda: 'Normalmente 0 si la entidad es pública o está exenta; si no, 21.' },
     { k: 'estado', t: 'Estado', tipo: 'select', op: L.estadoCobro, vacio: false, ancho: 'medio' },
+    { k: 'plazoCobro', t: 'Se cobra', tipo: 'select', op: PLAZOS_COBRO, vacio: false, ancho: 'medio', ayuda: 'Desde la fecha de la factura. Sirve para saber cuándo te tiene que llegar el dinero.' },
     { k: 'metodo', t: 'Método de cobro', tipo: 'select', op: L.metodo, ancho: 'medio' },
     { k: 'libro', t: 'Libro (si va con uno)', tipo: 'select', op: D.libros.map(l => l.titulo) },
     { k: 'notas', t: 'Notas', tipo: 'area', filas: 2 },

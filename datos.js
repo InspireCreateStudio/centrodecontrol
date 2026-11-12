@@ -107,7 +107,13 @@ const ingreso = {
   iva: (i) => n(i.bruto) * n(i.ivaPct) / 100,
   irpf: (i) => n(i.bruto) * n(i.irpfPct) / 100,
   neto: (i) => n(i.bruto) * (1 + n(i.ivaPct) / 100 - n(i.irpfPct) / 100),
+  // Plazo de cobro: «Al momento», «30 días», «60 días», «90 días»
+  dias: (i) => parseInt(i.plazoCobro, 10) || 0,
+  fechaCobro: (i) => i.fecha ? sumarDias(i.fecha, ingreso.dias(i)) : '',
+  pendiente: (i) => i.estado !== 'Cobrado' && i.estado !== 'Devuelto',
+  vencido: (i) => ingreso.pendiente(i) && !!i.fecha && ingreso.fechaCobro(i) < hoy(),
 };
+const PLAZOS_COBRO = ['Al momento', '30 días', '60 días', '90 días'];
 const venta = {
   // Lo que paga la lectora (libros + envío)
   cobrado: (v) => n(v.uds || 1) * n(v.pvp) + n(v.envioCobrado),
@@ -186,7 +192,7 @@ function caja(Y) {
   const m = (k) => meses[k] || (meses[k] = { kdp: 0, extra: 0, directa: 0, pagado: 0 });
   D.kdp.ventas.forEach(f => f.mes && (m(sumarMeses(f.mes, lag)).kdp += eurVenta(f)));
   D.kdp.kenp.forEach(f => f.mes && (m(sumarMeses(f.mes, lag)).kdp += eurKenp(f)));
-  D.ingresos.forEach(i => { if (i.fecha && i.estado === 'Cobrado') m(mesDe(i.fecha)).extra += ingreso.neto(i); });
+  D.ingresos.forEach(i => { if (i.fecha && i.estado === 'Cobrado') m(mesDe(i.fechaCobrado || ingreso.fechaCobro(i))).extra += ingreso.neto(i); });
   D.ventas.forEach(v => { if (v.fecha && v.estado !== 'Cancelado') m(mesDe(v.fecha)).directa += venta.cobrado(v) - venta.costes(v); });
   D.gastos.forEach(g => { if (g.fecha && g.pagado) m(mesDe(g.fecha)).pagado += gasto.total(g); });
   const H = mesDe(hoy());

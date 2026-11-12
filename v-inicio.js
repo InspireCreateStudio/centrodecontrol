@@ -38,7 +38,9 @@ VISTAS.inicio = (cont) => {
   if (noDed) avisos.push({ c: '', t: `🧾 ${plural(noDed, 'gasto sin marcar como deducible', 'gastos sin marcar como deducibles')}: no restan en los impuestos.`, ir: 'gastos' });
   const noPag = D.gastos.filter(g => !g.pagado && n(g.base)).length;
   if (noPag) avisos.push({ c: '', t: `💸 ${plural(noPag, 'gasto sin marcar como pagado', 'gastos sin marcar como pagados')}.`, ir: 'gastos' });
-  if (C.pendExtra > 0) avisos.push({ c: '', t: `💰 Pendiente de cobrar (ingresos extra): <b>${fmtE(C.pendExtra)}</b>`, ir: 'ingresos' });
+  const vencidos = D.ingresos.filter(ingreso.vencido);
+  if (vencidos.length) avisos.push({ c: 'rojo', t: `⏰ ${plural(vencidos.length, 'factura ya debería estar cobrada', 'facturas ya deberían estar cobradas')} y sigue${vencidos.length === 1 ? '' : 'n'} pendiente${vencidos.length === 1 ? '' : 's'}: <b>${fmtE(vencidos.reduce((a, i) => a + ingreso.neto(i), 0))}</b>. Reclámalo o márcalo como cobrado.`, ir: 'ingresos', ui: { iPest: 'extra' } });
+  if (C.pendExtra > 0) avisos.push({ c: '', t: `💰 Pendiente de cobrar (ingresos extra): <b>${fmtE(C.pendExtra)}</b>${vencidos.length ? '' : (() => { const p = D.ingresos.filter(i => ingreso.pendiente(i) && i.fecha).sort((a, b) => ingreso.fechaCobro(a).localeCompare(ingreso.fechaCobro(b)))[0]; return p ? ` · el próximo, ${fechaCorta(ingreso.fechaCobro(p))}` : ''; })()}`, ir: 'ingresos' });
   D.libros.forEach(l => { if (l.select && l.renovSelect) { const d = diasEntre(H, l.renovSelect); if (d >= 0 && d <= 14) avisos.push({ c: d <= 3 ? 'rojo' : 'ambar', t: `🔁 KDP Select de <b>${esc(l.titulo)}</b> se renueva ${d === 0 ? 'hoy' : `en ${plural(d, 'día', 'días')}`}.`, ir: 'libros' }); } });
   // Próxima presentación trimestral
   const T = trimDe(H), Yt = aFecha(H).getFullYear();
