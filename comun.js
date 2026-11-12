@@ -30,19 +30,20 @@ function leerFormulario(m, campos, obj) {
   return obj;
 }
 // Ficha genérica: título, campos y botones (Guardar, Borrar, extras)
-function ficha({ titulo, obj, campos, onGuardar, onBorrar, extras = [], clase = '' }) {
+function ficha({ titulo, obj, campos, onGuardar, onBorrar, extras = [], clase = '', despues = '', alAbrir = null }) {
   const copia = JSON.parse(JSON.stringify(obj));
-  modal(`<h3>${titulo}</h3>${formulario(copia, campos)}
+  modal(`<h3>${titulo}</h3>${formulario(copia, campos)}${despues}
     <div class="pie">${onBorrar ? '<button class="btn peligro-suave" id="fi-borrar">Borrar</button>' : ''}<span class="hueco"></span>
     ${extras.map((x, i) => `<button class="btn" data-extra="${i}">${x.t}</button>`).join('')}
     <button class="btn" data-cerrar>Cancelar</button><button class="btn prim" id="fi-ok">Guardar</button></div>`, {
     clase: 'ficha ' + clase,
     alAbrir: (m, cerrar) => {
-      const ok = () => { const r = leerFormulario(m, campos, copia); if (onGuardar(r) !== false) cerrar(); };
+      const ok = () => { const r = leerFormulario(m, campos, copia); if (onGuardar(r, m) !== false) cerrar(); };
       $('#fi-ok', m).onclick = ok;
       m.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) ok(); if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.type !== 'checkbox') { e.preventDefault(); ok(); } });
       if (onBorrar) $('#fi-borrar', m).onclick = async () => { if (await onBorrar()) cerrar(); };
       $$('[data-extra]', m).forEach(b => b.onclick = () => { const r = leerFormulario(m, campos, copia); extras[+b.dataset.extra].fn(r, cerrar, m); });
+      if (alAbrir) alAbrir(m);
       campos.forEach(c => { if (c.alCambiar) { const i = $(`[data-k="${c.k}"]`, m); if (i) i.addEventListener('change', () => c.alCambiar(i.value, m)); } });
     }
   });

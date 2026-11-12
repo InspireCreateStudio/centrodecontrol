@@ -52,9 +52,23 @@ function editarIngreso(i, { nueva = false } = {}) {
   ];
   ficha({
     titulo: nueva ? 'Nuevo ingreso' : 'Ingreso', obj: i, campos,
-    onGuardar: (r) => {
+    despues: nueva ? bloqueRepetir() : '',
+    alAbrir: nueva ? enlazarRepetir : null,
+    onGuardar: (r, m) => {
       if (!r.concepto) { aviso('Escribe el concepto'); return false; }
       const fin = { ...r, id: i.id || uid(), bruto: n(r.bruto), irpfPct: n(r.irpfPct), ivaPct: n(r.ivaPct) };
+      const meses = nueva ? mesesRepetir(m) : [];
+      if (nueva && meses.length) {
+        if (!fin.fecha) { aviso('Pon la fecha: de ahí saco el año y el día del mes'); return false; }
+        const D0 = +fin.fecha.slice(8, 10), ym0 = fin.fecha.slice(0, 7);
+        meses.forEach((ym, k) => {
+          const [Y, M] = ym.split('-').map(Number);
+          const fecha = `${ym}-${pad(Math.min(D0, new Date(Y, M, 0).getDate()))}`;
+          D.ingresos.push({ ...fin, id: uid(), fecha, factura: k === 0 && fin.factura ? fin.factura : siguienteFactura(Y), estado: ym === ym0 ? fin.estado : 'Pendiente' });
+        });
+        cambio(); aviso(plural(meses.length, 'ingreso apuntado', 'ingresos apuntados'));
+        return;
+      }
       if (!fin.factura && nueva) fin.factura = siguienteFactura();
       if (nueva) D.ingresos.push(fin); else D.ingresos[D.ingresos.findIndex(x => x.id === i.id)] = fin;
       cambio();
@@ -63,9 +77,59 @@ function editarIngreso(i, { nueva = false } = {}) {
     extras: nueva ? [] : [{ t: 'Duplicar', fn: (r, cerrar) => { cerrar(); editarIngreso({ ...r, id: null, fecha: hoy(), factura: '', estado: 'Pendiente' }, { nueva: true }); } }],
   });
 }
+// ---------- ingreso que se repite: un apunte por cada mes elegido ----------
+const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+function bloqueRepetir() {
+  return `<div class="repetir">
+    <label class="repetir-si"><input type="checkbox" id="rep-si"> <b>Se repite cada mes</b> <span class="suave">(club de lectura, colaboraciones fijas…)</span></label>
+    <div id="rep-cuerpo" hidden>
+      <p class="suave">Elige los meses (los doce siguientes a la fecha de arriba). Apunto un ingreso en cada uno, el mismo día del mes, con su número de factura. Los meses que no son el de la fecha quedan como pendientes de cobro.</p>
+      <div class="rep-meses" id="rep-meses"></div>
+      <div class="rep-atajos"><button type="button" class="btn peq" data-rep="anio">Hasta diciembre</button><button type="button" class="btn peq" data-rep="todos">Los 12 meses</button><button type="button" class="btn peq" data-rep="curso">Octubre a mayo</button><button type="button" class="btn peq" data-rep="nada">Ninguno</button></div>
+      <p class="suave" id="rep-res"></p>
+    </div>
+  </div>`;
+}
+function enlazarRepetir(m) {
+  const si = $('#rep-si', m), cuerpo = $('#rep-cuerpo', m), fecha = $('[data-k="fecha"]', m);
+  // Los doce meses que empiezan en el de la fecha (pueden pasar al año siguiente)
+  const ventana = () => {
+    const f = (fecha && fecha.value) || hoy();
+    let Y = +f.slice(0, 4), M = +f.slice(5, 7);
+    return Array.from({ length: 12 }, () => { const ym = `${Y}-${pad(M)}`; if (++M > 12) { M = 1; Y++; } return ym; });
+  };
+  const pintarMeses = (marcados) => {
+    const v = ventana(), cambiaAnio = v[0].slice(0, 4) !== v[11].slice(0, 4);
+    $('#rep-meses', m).innerHTML = v.map(ym => `<label class="rep-mes"><input type="checkbox" data-mes="${ym}"${marcados.includes(ym) ? ' checked' : ''}><span>${MESES_CORTOS[+ym.slice(5) - 1]}${cambiaAnio ? ` <small>${ym.slice(2, 4)}</small>` : ''}</span></label>`).join('');
+    $$('[data-mes]', m).forEach(c => c.onchange = resumen);
+    resumen();
+  };
+  const marcados = () => $$('[data-mes]:checked', m).map(c => c.dataset.mes);
+  const marcar = (fn) => { const v = ventana(); pintarMeses(v.filter((ym, k) => fn(+ym.slice(5), k, v))); };
+  const resumen = () => {
+    const ms = marcados();
+    $('#rep-res', m).textContent = ms.length ? `Se apuntarán ${ms.length === 1 ? '1 ingreso' : ms.length + ' ingresos'}, de ${MESES_CORTOS[+ms[0].slice(5) - 1]} ${ms[0].slice(0, 4)} a ${MESES_CORTOS[+ms[ms.length - 1].slice(5) - 1]} ${ms[ms.length - 1].slice(0, 4)}.` : 'Marca al menos un mes.';
+  };
+  // Octubre a mayo: la temporada que empieza en el primer octubre (o antes, si la fecha ya está dentro) y acaba en mayo
+  const curso = (mes, k, v) => {
+    const ini = v.findIndex(ym => { const x = +ym.slice(5); return x >= 10 || x <= 5; });
+    if (ini < 0 || k < ini) return false;
+    const fin = v.findIndex((ym, j) => j > ini && +ym.slice(5) === 6);
+    return fin < 0 || k < fin;
+  };
+  si.onchange = () => { cuerpo.hidden = !si.checked; if (si.checked && !marcados().length) marcar((mes, k, v) => v[k].slice(0, 4) === v[0].slice(0, 4)); else resumen(); };
+  $$('[data-rep]', m).forEach(b => b.onclick = () => {
+    const t = b.dataset.rep;
+    marcar(t === 'todos' ? () => true : t === 'nada' ? () => false : t === 'curso' ? curso : (mes, k, v) => v[k].slice(0, 4) === v[0].slice(0, 4));
+  });
+  if (fecha) fecha.addEventListener('change', () => { const antes = marcados().length; pintarMeses([]); if (antes && si.checked) marcar((mes, k, v) => v[k].slice(0, 4) === v[0].slice(0, 4)); });
+  pintarMeses([]);
+}
+const mesesRepetir = (m) => ($('#rep-si', m) && $('#rep-si', m).checked) ? $$('[data-mes]:checked', m).map(c => c.dataset.mes) : [];
+
 // Siguiente número de factura con el formato «n/AA»
-function siguienteFactura() {
-  const aa = String(new Date().getFullYear()).slice(2);
+function siguienteFactura(anio = new Date().getFullYear()) {
+  const aa = String(anio).slice(2);
   const nums = D.ingresos.map(i => String(i.factura || '').match(/^(\d+)\/(\d{2})$/)).filter(m => m && m[2] === aa).map(m => +m[1]);
   return `${(nums.length ? Math.max(...nums) : 0) + 1}/${aa}`;
 }

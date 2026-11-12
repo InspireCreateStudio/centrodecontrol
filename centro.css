@@ -209,3 +209,18 @@
 .perfil-links a { color: var(--tinta); text-decoration: none; border-bottom: 2px solid var(--acento-claro); font-weight: 600; }
 .perfil-links a:hover { border-color: var(--acento); }
 @media (max-width: 700px) { .perfil-in { flex-wrap: wrap; gap: 12px; } .perfil-in .perfil-nom { font-size: 22px; } }
+
+/* Ingreso que se repite cada mes */
+.repetir { margin: 6px 0 4px; padding: 12px 14px; border: 1px dashed var(--linea-fuerte, var(--linea)); border-radius: 12px; background: var(--papel); }
+.repetir p { margin: 8px 0; font-size: 13px; }
+.repetir-si { display: flex; align-items: center; gap: 8px; cursor: pointer; flex-wrap: wrap; }
+.repetir-si .suave { font-size: 12.5px; }
+.rep-meses { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin: 6px 0 8px; }
+.rep-mes { position: relative; cursor: pointer; }
+.rep-mes input { position: absolute; opacity: 0; pointer-events: none; }
+.rep-mes span { display: block; text-align: center; padding: 7px 0; border-radius: 9px; border: 1px solid var(--linea); background: var(--hoja); font-size: 13px; text-transform: capitalize; }
+.rep-mes input:checked + span { background: var(--acento); border-color: transparent; color: var(--sobre-acento, #fff); font-weight: 600; }
+.rep-mes input:focus-visible + span { outline: 2px solid var(--acento); outline-offset: 1px; }
+.rep-atajos { display: flex; flex-wrap: wrap; gap: 6px; }
+@media (max-width: 520px) { .rep-meses { grid-template-columns: repeat(4, 1fr); } }
+.rep-mes small { font-size: 10px; opacity: .75; }
